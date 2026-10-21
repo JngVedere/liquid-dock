@@ -5,6 +5,7 @@
 #include "apps.h"
 #include "window_preview.h"
 #include "buttons.h"
+#include "native_tray.h"
 #include <shellapi.h>
 
 extern Settings g_settings;
@@ -56,7 +57,7 @@ private:
         // layout
         float u = 0, size = 0, u0 = 0, weight = 0;
     };
-    enum HitKind { HitNone, HitSlot, HitTray, HitClock, HitSensor, HitPanel, HitBar, HitButton, HitKindCount };
+    enum HitKind { HitNone, HitSlot, HitTray, HitClock, HitSensor, HitPanel, HitBar, HitButton, HitPromoted, HitKindCount };   // HitPromoted: slot = icon
     struct Hit {
         HitKind kind = HitNone; int slot = -1; ButtonId button = ButtonId::Count;
         bool Is(ButtonId b) const { return kind == HitButton && button == b; }
@@ -118,12 +119,18 @@ private:
     Cell& Cell_(ButtonId b) { return buttonCells[(int)b]; }
     const Cell& Cell_(ButtonId b) const { return buttonCells[(int)b]; }
     bool stackButtons = false;
+    // icons moved out of the hidden icons (nativetray::Promoted), one cell each from promotedU0
+    std::shared_ptr<const nativetray::PromotedList> promoted;
+    std::vector<ComPtr<ID2D1Bitmap1>> promotedBitmaps;
+    float promotedU0 = 0, promotedCell = 0;
+    size_t PromotedCount() const { return promoted ? promoted->icons.size() : 0; }
     struct LayoutMetrics {
         float icon, padding, gap, thickness;
         float separator, trayButton, clock, sensor;
         float connectivity, utilities;     // the two small-button groups, after pairing
+        float promotedCell, promoted;      // the taskbar's own tray icons, after the hidden-icons chevron
         bool stack;
-        float TrayWidth() const { return separator + trayButton + connectivity + clock + sensor + utilities; }
+        float TrayWidth() const { return separator + trayButton + promoted + connectivity + clock + sensor + utilities; }
     };
     LayoutMetrics MeasureMetrics(float fitFactor, int thicknessPct = -1);
     float SmallButtonWidth(ButtonId b, const LayoutMetrics& m) const;

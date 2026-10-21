@@ -56,6 +56,8 @@ Dock::LayoutMetrics Dock::MeasureMetrics(float fitFactor, int thicknessPct) {
                    : std::max(time.width, date.width) + 12 * scale;
     m.sensor = vert ? m.icon * 1.3f
                     : TextWidth(g_gfx.fmtClockSmall.Get(), L"CPU 100°") + 16 * scale;
+    m.promotedCell = std::max(m.icon * 0.55f, 24 * scale);   // the size of a small button
+    m.promoted = m.promotedCell * PromotedCount();
     m.connectivity = ArrangeGroup(0, m, 0, false);
     m.utilities = ArrangeGroup(1, m, 0, false);
     return m;
@@ -175,7 +177,8 @@ void Dock::Layout(double) {
     cells[HitTray].u0 = x; cells[HitTray].u1 = x + metrics.trayButton;
     stackButtons = metrics.stack;
     for (auto& c : buttonCells) c = Cell{};   // buttons not on the dock take no space
-    x = ArrangeGroup(0, metrics, cells[HitTray].u1, true);
+    promotedU0 = cells[HitTray].u1; promotedCell = metrics.promotedCell;
+    x = ArrangeGroup(0, metrics, promotedU0 + metrics.promoted, true);
     cells[HitClock].u0 = x; cells[HitClock].u1 = x + metrics.clock;
     cells[HitSensor].u0 = cells[HitClock].u1; cells[HitSensor].u1 = cells[HitSensor].u0 + metrics.sensor;
     x = ArrangeGroup(1, metrics, cells[HitSensor].u1, true);
@@ -264,6 +267,11 @@ Dock::Hit Dock::HitTestUV(float u, float v) {
     for (int i = 0; i < kButtonCount; ++i) {
         auto r = ButtonRect((ButtonId)i, true);   // empty for buttons not on the dock
         if (point.x >= r.left && point.x < r.right && point.y >= r.top && point.y < r.bottom) return ButtonHit((ButtonId)i);
+    }
+    if (u >= promotedU0 && u < promotedU0 + promotedCell * PromotedCount()) {
+        h.kind = HitPromoted;
+        h.slot = std::min((int)PromotedCount() - 1, (int)((u - promotedU0) / promotedCell));
+        return h;
     }
     if (u >= cells[HitTray].u0 && u < cells[HitTray].u1) h.kind = HitTray;
     else if (u >= cells[HitClock].u0 && u < cells[HitClock].u1) h.kind = HitClock;

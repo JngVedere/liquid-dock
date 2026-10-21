@@ -169,6 +169,13 @@ static void AssertHitGeometry(Dock& d) {
   float u2,v2;d.ClientToUV((int)px.x,(int)px.y,u2,v2);Check(d.HitTestUV(u2,v2).kind==item.kind,"tray control rendered center maps to its own hit target");
   Check(item.start>=-1 && item.end<=d.len+1,"tray controls remain inside monitor edge");
  }
+ // the taskbar's own tray icons (whatever this machine has promoted) sit between the chevron and network
+ Check(d.promotedU0==d.cells[Dock::HitTray].u1 && d.promotedU0+d.promotedCell*d.PromotedCount()<=d.Cell_(ButtonId::Network).u0+0.5f,"promoted icons sit between hidden icons and network");
+ for(size_t i=0;i<d.PromotedCount();++i){
+  auto px=d.W(d.promotedU0+d.promotedCell*(i+0.5f),d.margin+d.barThick/2-d.hideOff);
+  float u2,v2;d.ClientToUV((int)px.x,(int)px.y,u2,v2);auto hit=d.HitTestUV(u2,v2);
+  Check(hit.kind==Dock::HitPromoted && hit.slot==(int)i,"promoted icon center maps to its own hit target");
+ }
  auto& netCell=d.Cell_(ButtonId::Network);auto& volCell=d.Cell_(ButtonId::Volume);
  auto network=d.ButtonRect(ButtonId::Network),volume=d.ButtonRect(ButtonId::Volume);
  if(d.stackButtons){

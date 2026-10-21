@@ -169,7 +169,7 @@ static ComPtr<ID2D1Bitmap1> IconFromShellItem(IShellItem* si) {
 }
 
 // HICON -> premultiplied D2D bitmap at the icon's native size (handles alpha and mask-only icons).
-static ComPtr<ID2D1Bitmap1> IconFromHICON(HICON hi) {
+ComPtr<ID2D1Bitmap1> IconFromHICON(HICON hi) {
     if (!hi) return nullptr;
     ICONINFO ii = {};
     if (!GetIconInfo(hi, &ii)) return nullptr;

@@ -346,6 +346,12 @@ void Dock::StartBounce(Slot& s, int count, bool loop, bool hiddenMode, double no
 void Dock::Update(double now, float dt, POINT cursor) {
     g_gfx.EnsureFonts(scale);   // text formats for this monitor's scale
     SyncSlots();
+    if (auto p = nativetray::Promoted(); p != promoted) {
+        promoted = p;
+        promotedBitmaps.clear();
+        for (size_t i = 0; i < PromotedCount(); ++i) promotedBitmaps.push_back(IconFromHICON(promoted->icons[i].icon));
+        dirty = true;
+    }
     {
         float before = fit;
         ApplyFit(dt);
@@ -594,6 +600,9 @@ void Dock::Update(double now, float dt, POINT cursor) {
     } else if (hoverKind == HitTray) {
         tip = L"숨겨진 아이콘 표시";
         tooltipU = cells[HitTray].Mid(); tooltipV = barTip;
+    } else if (hoverKind == HitPromoted && hoverSlot >= 0 && hoverSlot < (int)PromotedCount()) {
+        tip = promoted->icons[hoverSlot].tip;
+        tooltipU = promotedU0 + promotedCell * (hoverSlot + 0.5f); tooltipV = barTip;
     } else if (hoverKind == HitClock) {
         SYSTEMTIME st; GetLocalTime(&st);
         wchar_t d[128] = {};
@@ -701,6 +710,9 @@ void Dock::Click(const Hit& h) {
             MessageBoxW(hwnd, L"숨겨진 아이콘 창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.", L"Liquid Dock", MB_OK | MB_ICONINFORMATION);
         break;
     }
+    case HitPromoted:
+        if (h.slot >= 0 && h.slot < (int)PromotedCount()) { auto list = promoted; nativetray::ClickPromoted(list->icons[h.slot], false); }
+        break;
     case HitClock: nativetray::OpenCalendar(); break;
     case HitSensor: case HitPanel:
         if (g_sensors.CpuTempAvailable() || g_settings.cpuTemp) OpenTaskManager();
@@ -769,6 +781,7 @@ LRESULT Dock::WndProc(UINT msg, WPARAM wp, LPARAM lp) {
         if (h.kind == HitSlot && slots[h.slot].app) ShowAppMenu(slots[h.slot]);
         else if (h.kind == HitSlot && g_settings.startMenuExtras) ShowStartMenu();
         else if (h.kind == HitButton && Button(h.button).rightClick) (this->*Button(h.button).rightClick)();
+        else if (h.kind == HitPromoted && h.slot < (int)PromotedCount()) { auto list = promoted; nativetray::ClickPromoted(list->icons[h.slot], true); }
         else if (h.kind == HitClock || h.kind == HitSensor || h.kind == HitPanel) ShowTrayMenu(h);
         else ShowDockMenu();
         return 0;

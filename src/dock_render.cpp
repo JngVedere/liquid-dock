@@ -397,6 +397,10 @@ void Dock::Render() {
             float inset = (stackButtons ? 1.5f : 2.0f) * scale;
             hr.left += inset; hr.right -= inset; hr.top += inset; hr.bottom -= inset;
             hu = Cell_(hoverButton).Mid();
+        } else if (hoverKind == HitPromoted) {
+            float c0 = promotedU0 + promotedCell * hoverSlot;
+            hr = RectUV(c0 + 1, c0 + promotedCell - 1, v0 + pad * 0.6f, v1 - pad * 0.6f);
+            hu = c0 + promotedCell * 0.5f;
         } else if (hoverKind == HitTray || hoverKind == HitClock || hoverKind == HitSensor) {
             const Cell& c = cells[hoverKind];
             hr = RectUV(c.u0 + 1, c.u1 - 1, v0 + pad * 0.6f, v1 - pad * 0.6f);
@@ -414,6 +418,12 @@ void Dock::Render() {
                              : g_settings.edge == Edge::Left ? L"" : L"";
         const Cell& tray = cells[HitTray];
         DrawShadowText(chevG, g_gfx.fmtGlyph.Get(), RectUV(tray.u0, tray.u1, v0, v1), tray.Mid(), vis * 0.85f);
+        for (size_t i = 0; i < promotedBitmaps.size(); ++i) {
+            if (!promotedBitmaps[i]) continue;
+            float c = promotedU0 + promotedCell * (i + 0.5f), mid = (v0 + v1) * 0.5f, half = base * 0.21f;
+            dc->DrawBitmap(promotedBitmaps[i].Get(), RectUV(c - half, c + half, mid - half, mid + half), vis,
+                           D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, nullptr, nullptr);
+        }
         const Cell& clk = cells[HitClock];
         if (!IsVertical(g_settings.edge)) {
             auto r = RectUV(clk.u0, clk.u1, v0, v1);

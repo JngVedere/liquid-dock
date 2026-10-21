@@ -59,5 +59,6 @@ private:
 };
 
 extern AppModel g_apps;
+ComPtr<ID2D1Bitmap1> IconFromHICON(HICON hi);   // premultiplied, at the icon's native size
 // --demo (recording videos): only the pinned apps; other running apps stay off the dock
 extern bool g_demoMode;
